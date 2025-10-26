@@ -1,17 +1,20 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Heart, Share2, Download, Star } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { useStore } from '../lib/store';
+import { useAuth } from '../lib/auth';
 import { categories } from '../lib/mockData';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { products, addToCart } = useStore();
+  const { isAuthenticated, username } = useAuth();
   
   const product = products.find(p => p.id === id);
   const category = categories.find(c => c.id === product?.category);
@@ -33,7 +36,13 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    addToCart(product);
+    if (!isAuthenticated || !username) {
+      toast.error('Please login to add items to cart');
+      navigate('/login');
+      return;
+    }
+    
+    addToCart(product, username);
     toast.success(`${product.name} added to cart!`);
   };
 

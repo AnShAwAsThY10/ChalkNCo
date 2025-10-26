@@ -4,26 +4,29 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 import { useStore } from '../lib/store';
+import { useAuth } from '../lib/auth';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
 
 export default function Cart() {
-  const { cart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useStore();
+  const { username } = useAuth();
+  const { getCart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useStore();
+  const cart = getCart(username || '');
 
   const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    updateQuantity(productId, newQuantity);
+    updateQuantity(productId, newQuantity, username || '');
     if (newQuantity === 0) {
       toast.success('Item removed from cart');
     }
   };
 
   const handleRemoveItem = (productId: string, productName: string) => {
-    removeFromCart(productId);
+    removeFromCart(productId, username || '');
     toast.success(`${productName} removed from cart`);
   };
 
   const handleClearCart = () => {
-    clearCart();
+    clearCart(username || '');
     toast.success('Cart cleared');
   };
 
@@ -146,7 +149,7 @@ export default function Cart() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-pink-700">
                     <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                    <span>${getCartTotal().toFixed(2)}</span>
+                    <span>${getCartTotal(username || '').toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-pink-700">
                     <span>Shipping</span>
@@ -162,7 +165,7 @@ export default function Cart() {
                 
                 <div className="flex justify-between text-lg font-bold text-pink-800">
                   <span>Total</span>
-                  <span>${getCartTotal().toFixed(2)}</span>
+                  <span>${getCartTotal(username || '').toFixed(2)}</span>
                 </div>
                 
                 <Button 

@@ -12,8 +12,9 @@ import { toast } from 'sonner';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -29,18 +30,20 @@ export default function Login() {
       return;
     }
 
-    const success = login(formData.username, formData.password);
+    const success = isLogin 
+      ? login(formData.username, formData.password)
+      : register(formData.username, formData.password);
     
     if (success) {
-      if (formData.username === 'admin') {
+      if (isLogin && formData.username === 'admin') {
         toast.success('Welcome Admin! You have full access.');
         navigate('/admin');
       } else {
-        toast.success(`Welcome ${formData.username}!`);
+        toast.success(isLogin ? `Welcome ${formData.username}!` : 'Account created successfully!');
         navigate(from, { replace: true });
       }
     } else {
-      toast.error('Invalid credentials');
+      toast.error(isLogin ? 'Invalid credentials' : 'Username already exists');
     }
   };
 
@@ -52,8 +55,12 @@ export default function Login() {
             <div className="w-16 h-16 bg-gradient-to-br from-pink-400 to-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogIn className="w-8 h-8 text-white" />
             </div>
-            <CardTitle className="text-2xl text-pink-800">Welcome Back</CardTitle>
-            <p className="text-pink-600/70">Sign in to your account</p>
+            <CardTitle className="text-2xl text-pink-800">
+              {isLogin ? 'Welcome Back' : 'Create Account'}
+            </CardTitle>
+            <p className="text-pink-600/70">
+              {isLogin ? 'Sign in to your account' : 'Sign up for a new account'}
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,9 +100,19 @@ export default function Login() {
                 type="submit" 
                 className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                Sign In
+                {isLogin ? 'Sign In' : 'Create Account'}
               </Button>
             </form>
+
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-pink-600 hover:text-pink-800 text-sm underline"
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
 
             <div className="mt-6 p-4 bg-pink-50/50 rounded-lg border border-pink-200/50">
               <h4 className="font-semibold text-pink-800 mb-2">Demo Credentials:</h4>

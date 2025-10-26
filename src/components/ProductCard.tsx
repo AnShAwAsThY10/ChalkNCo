@@ -1,10 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Product } from '../lib/mockData';
 import { useStore } from '../lib/store';
+import { useAuth } from '../lib/auth';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -12,11 +13,20 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const navigate = useNavigate();
   const addToCart = useStore((state) => state.addToCart);
+  const { isAuthenticated, username } = useAuth();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addToCart(product);
+    
+    if (!isAuthenticated || !username) {
+      toast.error('Please login to add items to cart');
+      navigate('/login');
+      return;
+    }
+    
+    addToCart(product, username);
     toast.success(`${product.name} added to cart!`);
   };
 

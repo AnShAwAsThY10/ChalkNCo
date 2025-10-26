@@ -6,11 +6,14 @@ import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { useStore } from '../lib/store';
+import { useAuth } from '../lib/auth';
 import { Order } from '../lib/mockData';
 import Layout from '../components/Layout';
 
 export default function Orders() {
-  const { orders } = useStore();
+  const { username } = useAuth();
+  const { getOrders } = useStore();
+  const orders = getOrders(username || '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const getStatusColor = (status: Order['status']) => {

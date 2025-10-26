@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const cartItemsCount = useStore((state) => state.getCartItemsCount());
   const { isAuthenticated, isAdmin, username, logout } = useAuth();
+  const cartItemsCount = useStore((state) => state.getCartItemsCount(username || ''));
 
   const isActive = (path: string) => location.pathname === path;
 

@@ -2,77 +2,110 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Product, CartItem, Order, mockProducts, mockOrders } from './mockData';
 
+interface UserCart {
+  [username: string]: CartItem[];
+}
+
+interface UserOrders {
+  [username: string]: Order[];
+}
+
 interface StoreState {
   products: Product[];
-  cart: CartItem[];
-  orders: Order[];
+  userCarts: UserCart;
+  userOrders: UserOrders;
   searchQuery: string;
   selectedCategory: string;
   
   // Actions
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
+  addToCart: (product: Product, username: string) => void;
+  removeFromCart: (productId: string, username: string) => void;
+  updateQuantity: (productId: string, quantity: number, username: string) => void;
+  clearCart: (username: string) => void;
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (category: string) => void;
-  addOrder: (order: Order) => void;
-  getCartTotal: () => number;
-  getCartItemsCount: () => number;
+  addOrder: (order: Order, username: string) => void;
+  getCartTotal: (username: string) => number;
+  getCartItemsCount: (username: string) => number;
   getFilteredProducts: () => Product[];
+  getCart: (username: string) => CartItem[];
+  getOrders: (username: string) => Order[];
 }
 
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
       products: mockProducts,
-      cart: [],
-      orders: mockOrders,
+      userCarts: {},
+      userOrders: {},
       searchQuery: '',
       selectedCategory: '',
 
-      addToCart: (product) => {
-        const cart = get().cart;
+      addToCart: (product, username) => {
+        const { userCarts } = get();
+        const cart = userCarts[username] || [];
         const existingItem = cart.find(item => item.id === product.id);
         
         if (existingItem) {
           set({
-            cart: cart.map(item =>
-              item.id === product.id
-                ? { ...item, quantity: item.quantity + 1 }
-                : item
-            )
+            userCarts: {
+              ...userCarts,
+              [username]: cart.map(item =>
+                item.id === product.id
+                  ? { ...item, quantity: item.quantity + 1 }
+                  : item
+              )
+            }
           });
         } else {
           set({
-            cart: [...cart, { ...product, quantity: 1 }]
+            userCarts: {
+              ...userCarts,
+              [username]: [...cart, { ...product, quantity: 1 }]
+            }
           });
         }
       },
 
-      removeFromCart: (productId) => {
+      removeFromCart: (productId, username) => {
+        const { userCarts } = get();
+        const cart = userCarts[username] || [];
         set({
-          cart: get().cart.filter(item => item.id !== productId)
+          userCarts: {
+            ...userCarts,
+            [username]: cart.filter(item => item.id !== productId)
+          }
         });
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, username) => {
         if (quantity <= 0) {
-          get().removeFromCart(productId);
+          get().removeFromCart(productId, username);
           return;
         }
         
+        const { userCarts } = get();
+        const cart = userCarts[username] || [];
         set({
-          cart: get().cart.map(item =>
-            item.id === productId
-              ? { ...item, quantity }
-              : item
-          )
+          userCarts: {
+            ...userCarts,
+            [username]: cart.map(item =>
+              item.id === productId
+                ? { ...item, quantity }
+                : item
+            )
+          }
         });
       },
 
-      clearCart: () => {
-        set({ cart: [] });
+      clearCart: (username) => {
+        const { userCarts } = get();
+        set({ 
+          userCarts: {
+            ...userCarts,
+            [username]: []
+          }
+        });
       },
 
       setSearchQuery: (query) => {
@@ -83,18 +116,37 @@ export const useStore = create<StoreState>()(
         set({ selectedCategory: category });
       },
 
-      addOrder: (order) => {
+      addOrder: (order, username) => {
+        const { userOrders } = get();
+        const orders = userOrders[username] || [];
         set({
-          orders: [order, ...get().orders]
+          userOrders: {
+            ...userOrders,
+            [username]: [order, ...orders]
+          }
         });
       },
 
-      getCartTotal: () => {
-        return get().cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+      getCartTotal: (username) => {
+        const { userCarts } = get();
+        const cart = userCarts[username] || [];
+        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
       },
 
-      getCartItemsCount: () => {
-        return get().cart.reduce((count, item) => count + item.quantity, 0);
+      getCartItemsCount: (username) => {
+        const { userCarts } = get();
+        const cart = userCarts[username] || [];
+        return cart.reduce((count, item) => count + item.quantity, 0);
+      },
+
+      getCart: (username) => {
+        const { userCarts } = get();
+        return userCarts[username] || [];
+      },
+
+      getOrders: (username) => {
+        const { userOrders } = get();
+        return userOrders[username] || [];
       },
 
       getFilteredProducts: () => {
@@ -114,7 +166,7 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'chalk-canva-store',
-      partialize: (state) => ({ cart: state.cart, orders: state.orders }),
+      partialize: (state) => ({ userCarts: state.userCarts, userOrders: state.userOrders }),
     }
   )
 );
