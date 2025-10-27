@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardFooter } from '../components/ui/card';
@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Product } from '../lib/mockData';
 import { useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
+import { useCurrency } from '../lib/currency';
 import { toast } from 'sonner';
 
 interface ProductCardProps {
@@ -13,16 +14,19 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const navigate = useNavigate();
   const addToCart = useStore((state) => state.addToCart);
   const { isAuthenticated, username } = useAuth();
+  const { formatPrice } = useCurrency();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     
+    // Allow adding to cart without login
+    // Store in a temporary cart for non-authenticated users
     if (!isAuthenticated || !username) {
-      toast.error('Please login to add items to cart');
-      navigate('/login');
+      // For non-authenticated users, we'll use a temporary guest cart
+      addToCart(product, 'guest');
+      toast.success(`${product.name} added to cart!`);
       return;
     }
     
@@ -74,7 +78,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       
       <CardFooter className="p-4 pt-0 flex items-center justify-between">
         <span className="text-2xl font-bold text-pink-800">
-          ₹{product.price}
+          {formatPrice(product.price)}
         </span>
         <Button
           onClick={handleAddToCart}

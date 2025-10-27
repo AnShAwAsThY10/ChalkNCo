@@ -17,7 +17,7 @@ interface StoreState {
   searchQuery: string;
   selectedCategory: string;
   
-  // Actions
+  // Cart Actions
   addToCart: (product: Product, username: string) => void;
   removeFromCart: (productId: string, username: string) => void;
   updateQuantity: (productId: string, quantity: number, username: string) => void;
@@ -30,6 +30,11 @@ interface StoreState {
   getFilteredProducts: () => Product[];
   getCart: (username: string) => CartItem[];
   getOrders: (username: string) => Order[];
+  
+  // Product Management Actions
+  addProduct: (product: Product) => void;
+  updateProduct: (productId: string, updatedProduct: Partial<Product>) => void;
+  deleteProduct: (productId: string) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -162,6 +167,27 @@ export const useStore = create<StoreState>()(
           
           return matchesSearch && matchesCategory && product.inStock;
         });
+      },
+
+      // Product Management Functions
+      addProduct: (product) => {
+        set((state) => ({
+          products: [...state.products, product]
+        }));
+      },
+
+      updateProduct: (productId, updatedProduct) => {
+        set((state) => ({
+          products: state.products.map(product =>
+            product.id === productId ? { ...product, ...updatedProduct } : product
+          )
+        }));
+      },
+
+      deleteProduct: (productId) => {
+        set((state) => ({
+          products: state.products.filter(product => product.id !== productId)
+        }));
       },
     }),
     {

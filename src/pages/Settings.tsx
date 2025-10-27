@@ -10,8 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
+import { useCurrency, currencies } from '../lib/currency';
 
 export default function Settings() {
+  const { selectedCurrency, setCurrency } = useCurrency();
+  
   const [profile, setProfile] = useState({
     firstName: 'Shreya',
     lastName: 'Designer',
@@ -28,7 +31,6 @@ export default function Settings() {
 
   const [preferences, setPreferences] = useState({
     theme: 'light',
-    currency: 'USD',
     language: 'en'
   });
 
@@ -44,6 +46,11 @@ export default function Settings() {
   const handlePreferenceUpdate = (key: string, value: string) => {
     setPreferences(prev => ({ ...prev, [key]: value }));
     toast.success('Preferences updated!');
+  };
+
+  const handleCurrencyChange = (currencyCode: string) => {
+    setCurrency(currencyCode);
+    toast.success('Currency updated successfully!');
   };
 
   return (
@@ -230,14 +237,16 @@ export default function Settings() {
 
                   <div>
                     <Label className="text-pink-700">Currency</Label>
-                    <Select value={preferences.currency} onValueChange={(value) => handlePreferenceUpdate('currency', value)}>
+                    <Select value={selectedCurrency} onValueChange={handleCurrencyChange}>
                       <SelectTrigger className="bg-white/50 border-pink-200">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="USD">USD ($)</SelectItem>
-                        <SelectItem value="EUR">EUR (€)</SelectItem>
-                        <SelectItem value="GBP">GBP (£)</SelectItem>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            {currency.symbol} {currency.name} ({currency.code})
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

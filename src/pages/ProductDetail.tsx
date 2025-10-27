@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
+import { useCurrency } from '../lib/currency';
 import { categories } from '../lib/mockData';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const { products, addToCart } = useStore();
   const { isAuthenticated, username } = useAuth();
+  const { formatPrice } = useCurrency();
   
   const product = products.find(p => p.id === id);
   const category = categories.find(c => c.id === product?.category);
@@ -99,7 +101,7 @@ export default function ProductDetail() {
             )}
             <h1 className="text-4xl font-bold text-pink-800 mb-4">{product.name}</h1>
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-3xl font-bold text-pink-800">${product.price}</span>
+              <span className="text-3xl font-bold text-pink-800">{formatPrice(product.price)}</span>
               <Badge variant="secondary" className="bg-green-100 text-green-700">
                 {product.inStock ? 'In Stock' : 'Out of Stock'}
               </Badge>

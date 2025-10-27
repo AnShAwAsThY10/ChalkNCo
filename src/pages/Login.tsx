@@ -35,7 +35,7 @@ export default function Login() {
       : register(formData.username, formData.password);
     
     if (success) {
-      if (isLogin && formData.username === 'admin') {
+      if (isLogin && formData.username === 'Admin') {
         toast.success('Welcome Admin! You have full access.');
         navigate('/admin');
       } else {

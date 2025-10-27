@@ -7,13 +7,16 @@ import { Separator } from '../components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
+import { useCurrency } from '../lib/currency';
 import { Order } from '../lib/mockData';
 import Layout from '../components/Layout';
 
 export default function Orders() {
-  const { username } = useAuth();
+  const { username, isAuthenticated } = useAuth();
   const { getOrders } = useStore();
-  const orders = getOrders(username || '');
+  const { formatPrice } = useCurrency();
+  const cartUser = username || 'guest';
+  const orders = getOrders(cartUser);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const getStatusColor = (status: Order['status']) => {
@@ -55,7 +58,9 @@ export default function Orders() {
               <Package className="w-16 h-16 text-pink-400 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-pink-800 mb-4">No orders yet</h2>
               <p className="text-pink-600/70 mb-6">
-                When you place your first order, it will appear here.
+                {!isAuthenticated 
+                  ? "You don't have any orders yet. Start shopping to place your first order!" 
+                  : "When you place your first order, it will appear here."}
               </p>
               <Button asChild className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600">
                 <a href="/products">Start Shopping</a>
@@ -90,7 +95,7 @@ export default function Orders() {
                     </Badge>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-pink-800">${order.total.toFixed(2)}</div>
+                    <div className="font-bold text-pink-800">{formatPrice(order.total)}</div>
                     <div className="text-sm text-pink-600/70">{order.date}</div>
                   </div>
                 </div>
@@ -150,7 +155,7 @@ export default function Orders() {
                                   {getStatusIcon(selectedOrder.status)} {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
                                 </Badge>
                                 <div className="text-right">
-                                  <div className="font-bold text-pink-800">${selectedOrder.total.toFixed(2)}</div>
+                                  <div className="font-bold text-pink-800">{formatPrice(selectedOrder.total)}</div>
                                   <div className="text-sm text-pink-600/70">{selectedOrder.date}</div>
                                 </div>
                               </div>

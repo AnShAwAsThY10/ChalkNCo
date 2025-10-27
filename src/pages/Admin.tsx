@@ -11,13 +11,18 @@ import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 import { useStore } from '../lib/store';
 import { categories, Product } from '../lib/mockData';
+import { useCurrency } from '../lib/currency';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export default function Admin() {
-  const { products } = useStore();
+  const navigate = useNavigate();
+  const { products, addProduct, updateProduct, deleteProduct, userOrders } = useStore();
+  const { formatPrice } = useCurrency();
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
   
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -25,6 +30,7 @@ export default function Admin() {
     price: '',
     category: '',
     tags: '',
+    image: '',
     featured: false,
     inStock: true
   });
@@ -41,29 +47,60 @@ export default function Admin() {
       description: newProduct.description,
       price: parseFloat(newProduct.price),
       category: newProduct.category,
-      image: '/api/placeholder/400/400',
-      tags: newProduct.tags.split(',').map(tag => tag.trim()),
+      image: newProduct.image || '/api/placeholder/400/400',
+      tags: newProduct.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
       featured: newProduct.featured,
       inStock: newProduct.inStock
     };
 
-    // In a real app, this would be sent to the backend
+    addProduct(product);
     toast.success('Product added successfully!');
     setIsAddingProduct(false);
-    setNewProduct({
-      name: '',
-      description: '',
-      price: '',
-      category: '',
-      tags: '',
-      featured: false,
-      inStock: true
-    });
+    resetForm();
   };
 
   const handleDeleteProduct = (productId: string, productName: string) => {
-    // In a real app, this would delete from the backend
+    deleteProduct(productId);
     toast.success(`${productName} deleted successfully!`);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category,
+      tags: product.tags.join(', '),
+      image: product.image,
+      featured: product.featured,
+      inStock: product.inStock
+    });
+    setIsEditingProduct(true);
+  };
+
+  const handleUpdateProduct = () => {
+    if (!newProduct.name || !newProduct.description || !newProduct.price || !newProduct.category || !editingProduct) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const updatedProduct: Partial<Product> = {
+      name: newProduct.name,
+      description: newProduct.description,
+      price: parseFloat(newProduct.price),
+      category: newProduct.category,
+      image: newProduct.image || '/api/placeholder/400/400',
+      tags: newProduct.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0),
+      featured: newProduct.featured,
+      inStock: newProduct.inStock
+    };
+
+    updateProduct(editingProduct.id, updatedProduct);
+    toast.success('Product updated successfully!');
+    setIsEditingProduct(false);
+    setEditingProduct(null);
+    resetForm();
   };
 
   const resetForm = () => {
@@ -73,26 +110,61 @@ export default function Admin() {
       price: '',
       category: '',
       tags: '',
+      image: '',
       featured: false,
       inStock: true
     });
   };
+
+  // Calculate order statistics
+  const getAllOrders = () => {
+    const allOrders = Object.values(userOrders).flat();
+    return allOrders;
+  };
+
+  const orderStats = () => {
+    const allOrders = getAllOrders();
+    const totalOrders = allOrders.length;
+    const totalRevenue = allOrders.reduce((sum, order) => sum + order.total, 0);
+    const ordersByStatus = allOrders.reduce((acc, order) => {
+      acc[order.status] = (acc[order.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return {
+      totalOrders,
+      totalRevenue,
+      ordersByStatus
+    };
+  };
+
+  const stats = orderStats();
 
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold text-pink-800">Inventory Management</h1>
-          <Dialog open={isAddingProduct} onOpenChange={setIsAddingProduct}>
+          <Dialog open={isAddingProduct || isEditingProduct} onOpenChange={(open) => {
+            if (!open) {
+              setIsAddingProduct(false);
+              setIsEditingProduct(false);
+              setEditingProduct(null);
+              resetForm();
+            }
+          }}>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600">
+              <Button 
+                onClick={() => setIsAddingProduct(true)}
+                className="bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Product
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-sm border-pink-200">
               <DialogHeader>
-                <DialogTitle className="text-pink-800">Add New Product</DialogTitle>
+                <DialogTitle className="text-pink-800">{isEditingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="grid grid-cols-2 gap-4">
@@ -127,6 +199,18 @@ export default function Admin() {
                     className="bg-white/50 border-pink-200"
                     rows={3}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="image" className="text-pink-700">Image URL</Label>
+                  <Input
+                    id="image"
+                    value={newProduct.image}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, image: e.target.value }))}
+                    placeholder="https://example.com/image.jpg"
+                    className="bg-white/50 border-pink-200"
+                  />
+                  <p className="text-xs text-pink-600/70 mt-1">Leave empty to use placeholder image</p>
                 </div>
 
                 <div>
@@ -177,9 +261,12 @@ export default function Admin() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={handleAddProduct} className="flex-1 bg-pink-500 hover:bg-pink-600">
+                  <Button 
+                    onClick={isEditingProduct ? handleUpdateProduct : handleAddProduct} 
+                    className="flex-1 bg-pink-500 hover:bg-pink-600"
+                  >
                     <Save className="w-4 h-4 mr-2" />
-                    Add Product
+                    {isEditingProduct ? 'Update Product' : 'Add Product'}
                   </Button>
                   <Button variant="outline" onClick={resetForm} className="!bg-transparent !hover:bg-transparent border-pink-300 text-pink-700">
                     Reset
@@ -191,7 +278,7 @@ export default function Admin() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white/40 backdrop-blur-sm border-pink-200/50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -204,11 +291,53 @@ export default function Admin() {
             </CardContent>
           </Card>
 
+          <Card 
+            className="bg-white/40 backdrop-blur-sm border-pink-200/50 cursor-pointer hover:bg-white/60 transition-colors"
+            onClick={() => navigate('/order-details')}
+          >
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-600/70 text-sm">Total Orders</p>
+                  <p className="text-2xl font-bold text-pink-800">{stats.totalOrders}</p>
+                </div>
+                <div className="text-3xl">🛒</div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-white/40 backdrop-blur-sm border-pink-200/50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-pink-600/70 text-sm">Featured</p>
+                  <p className="text-pink-600/70 text-sm">Total Revenue</p>
+                  <p className="text-2xl font-bold text-pink-800">{formatPrice(stats.totalRevenue)}</p>
+                </div>
+                <div className="text-3xl">💰</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/40 backdrop-blur-sm border-pink-200/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-600/70 text-sm">Processing Orders</p>
+                  <p className="text-2xl font-bold text-pink-800">{stats.ordersByStatus.processing || 0}</p>
+                </div>
+                <div className="text-3xl">🔄</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Additional Order Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-white/40 backdrop-blur-sm border-pink-200/50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-600/70 text-sm">Featured Products</p>
                   <p className="text-2xl font-bold text-pink-800">{products.filter(p => p.featured).length}</p>
                 </div>
                 <div className="text-3xl">⭐</div>
@@ -268,7 +397,7 @@ export default function Admin() {
                     </div>
                     <p className="text-pink-600/70 text-sm line-clamp-1">{product.description}</p>
                     <div className="flex items-center gap-4 mt-2">
-                      <span className="font-bold text-pink-800">${product.price}</span>
+                      <span className="font-bold text-pink-800">{formatPrice(product.price)}</span>
                       <span className="text-pink-600/70 text-sm">
                         {categories.find(c => c.id === product.category)?.name}
                       </span>
@@ -276,7 +405,12 @@ export default function Admin() {
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="!bg-transparent !hover:bg-transparent border-pink-300 text-pink-700">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleEditProduct(product)}
+                      className="!bg-transparent !hover:bg-transparent border-pink-300 text-pink-700"
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button 

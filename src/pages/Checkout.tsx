@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Lock, ArrowLeft } from 'lucide-react';
+import { CreditCard, Lock, ArrowLeft, Currency } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -9,6 +9,7 @@ import { Separator } from '../components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
+import { useCurrency} from '../lib/currency';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
 
@@ -16,7 +17,9 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { username } = useAuth();
   const { getCart, getCartTotal, clearCart, addOrder } = useStore();
-  const cart = getCart(username || '');
+  const { formatPrice } = useCurrency();
+  const cartUser = username || 'guest';
+  const cart = getCart(cartUser);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -27,6 +30,7 @@ export default function Checkout() {
     city: '',
     state: '',
     zipCode: '',
+    phone: '',
     cardNumber: '',
     expiryDate: '',
     cvv: '',
@@ -49,15 +53,26 @@ export default function Checkout() {
       id: `ORD-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       items: cart,
-      total: getCartTotal(username || ''),
-      status: 'processing' as const
+      total: getCartTotal(cartUser),
+      status: 'processing' as const,
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`,
+      phone: formData.phone
     };
 
-    addOrder(newOrder, username || '');
-    clearCart(username || '');
+    addOrder(newOrder, cartUser);
+    clearCart(cartUser);
     
-    toast.success('Order placed successfully!');
-    navigate('/orders');
+    // Show success message and then redirect
+    toast.success('🎉 Order placed successfully! Thank you for shopping with us!');
+    
+    // Delay redirect to ensure toast is visible
+    setTimeout(() => {
+      navigate('/');
+    }, 1500);
+    
     setIsProcessing(false);
   };
 
@@ -108,6 +123,17 @@ export default function Checkout() {
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       required
+                      className="bg-white/50 border-pink-200"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="text-pink-700">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="(555) 123-4567"
                       className="bg-white/50 border-pink-200"
                     />
                   </div>
@@ -164,16 +190,61 @@ export default function Checkout() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="state" className="text-pink-700">State</Label>
+                      <Label htmlFor="state" className="text-pink-700">Country</Label>
                       <Select onValueChange={(value) => handleInputChange('state', value)}>
                         <SelectTrigger className="bg-white/50 border-pink-200">
-                          <SelectValue placeholder="Select state" />
+                          <SelectValue placeholder="Select country" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ca">California</SelectItem>
-                          <SelectItem value="ny">New York</SelectItem>
-                          <SelectItem value="tx">Texas</SelectItem>
-                          <SelectItem value="fl">Florida</SelectItem>
+                            <SelectItem value="us">United States</SelectItem>
+                            <SelectItem value="ca">Canada</SelectItem>
+                            <SelectItem value="gb">United Kingdom</SelectItem>
+                            <SelectItem value="in">India</SelectItem>
+                            <SelectItem value="au">Australia</SelectItem>
+                            <SelectItem value="de">Germany</SelectItem>
+                            <SelectItem value="fr">France</SelectItem>
+                            <SelectItem value="it">Italy</SelectItem>
+                            <SelectItem value="es">Spain</SelectItem>
+                            <SelectItem value="cn">China</SelectItem>
+                            <SelectItem value="jp">Japan</SelectItem>
+                            <SelectItem value="br">Brazil</SelectItem>
+                            <SelectItem value="mx">Mexico</SelectItem>
+                            <SelectItem value="za">South Africa</SelectItem>
+                            <SelectItem value="ru">Russia</SelectItem>
+                            <SelectItem value="sa">Saudi Arabia</SelectItem>
+                            <SelectItem value="ae">United Arab Emirates</SelectItem>
+                            <SelectItem value="sg">Singapore</SelectItem>
+                            <SelectItem value="kr">South Korea</SelectItem>
+                            <SelectItem value="id">Indonesia</SelectItem>
+                            <SelectItem value="th">Thailand</SelectItem>
+                            <SelectItem value="nz">New Zealand</SelectItem>
+                            <SelectItem value="ch">Switzerland</SelectItem>
+                            <SelectItem value="se">Sweden</SelectItem>
+                            <SelectItem value="no">Norway</SelectItem>
+                            <SelectItem value="fi">Finland</SelectItem>
+                            <SelectItem value="nl">Netherlands</SelectItem>
+                            <SelectItem value="be">Belgium</SelectItem>
+                            <SelectItem value="dk">Denmark</SelectItem>
+                            <SelectItem value="ie">Ireland</SelectItem>
+                            <SelectItem value="my">Malaysia</SelectItem>
+                            <SelectItem value="ph">Philippines</SelectItem>
+                            <SelectItem value="pk">Pakistan</SelectItem>
+                            <SelectItem value="bd">Bangladesh</SelectItem>
+                            <SelectItem value="lk">Sri Lanka</SelectItem>
+                            <SelectItem value="ng">Nigeria</SelectItem>
+                            <SelectItem value="ke">Kenya</SelectItem>
+                            <SelectItem value="eg">Egypt</SelectItem>
+                            <SelectItem value="tr">Turkey</SelectItem>
+                            <SelectItem value="pl">Poland</SelectItem>
+                            <SelectItem value="ar">Argentina</SelectItem>
+                            <SelectItem value="cl">Chile</SelectItem>
+                            <SelectItem value="co">Colombia</SelectItem>
+                            <SelectItem value="ve">Venezuela</SelectItem>
+                            <SelectItem value="ua">Ukraine</SelectItem>
+                            <SelectItem value="il">Israel</SelectItem>
+                            <SelectItem value="iq">Iraq</SelectItem>
+                            <SelectItem value="ir">Iran</SelectItem>
+                            <SelectItem value="vn">Vietnam</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -196,7 +267,7 @@ export default function Checkout() {
                 <CardHeader>
                   <CardTitle className="text-pink-800 flex items-center">
                     <CreditCard className="w-5 h-5 mr-2" />
-                    Payment Information
+                    Payment Information 
                     <Lock className="w-4 h-4 ml-2 text-green-600" />
                   </CardTitle>
                 </CardHeader>
@@ -265,7 +336,7 @@ export default function Checkout() {
                           <div className="text-pink-600/70">Qty: {item.quantity}</div>
                         </div>
                         <div className="font-medium text-pink-800">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {formatPrice(item.price * item.quantity)}
                         </div>
                       </div>
                     ))}
@@ -274,25 +345,30 @@ export default function Checkout() {
                   <Separator className="bg-pink-200/50" />
                   
                   <div className="space-y-2">
-                    <div className="flex justify-between text-pink-700">
-                      <span>Subtotal</span>
-                      <span>${getCartTotal(username || '').toFixed(2)}</span>
+                      <div className="flex justify-between text-pink-700">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(getCartTotal(cartUser))}</span>
+                      </div>
+
+                      <div className="flex justify-between text-pink-700">
+                        <span>Shipping</span>
+                        <span className={getCartTotal(cartUser) > 400 ? "text-green-600" : "text-red-600"}>
+                          {getCartTotal(cartUser) >400 ? "Free" : formatPrice(50)}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between text-pink-700">
+                        <span>Tax</span>
+                        <span>₹0.00</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-pink-700">
-                      <span>Shipping</span>
-                      <span className="text-green-600">Free</span>
-                    </div>
-                    <div className="flex justify-between text-pink-700">
-                      <span>Tax</span>
-                      <span>₹0.00</span>
-                    </div>
-                  </div>
+
                   
                   <Separator className="bg-pink-200/50" />
                   
                   <div className="flex justify-between text-lg font-bold text-pink-800">
                     <span>Total</span>
-                    <span>${getCartTotal(username || '').toFixed(2)}</span>
+                    <span>{getCartTotal(cartUser) > 400 ? formatPrice(getCartTotal(username || '')) : formatPrice(getCartTotal(username || '')+50)}</span>
                   </div>
                   
                   <Button 

@@ -24,7 +24,7 @@ export const useAuth = create<AuthState>()(
       isAdmin: false,
       username: null,
       users: [
-        { username: 'admin', password: 'admin', isAdmin: true }
+        { username: 'A3F9C27B5D18E04F', password: 'A3F9C27B5D18E04F', isAdmin: true }
       ],
 
       login: (username: string, password: string) => {

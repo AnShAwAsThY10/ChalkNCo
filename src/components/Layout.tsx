@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Search, Settings, Package, Home, User, Shield, LogOut, LogIn } from 'lucide-react';
+import { ShoppingCart, Settings, Package, Home, User, Shield, LogOut, LogIn } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useStore } from '../lib/store';
@@ -10,7 +10,8 @@ import { toast } from 'sonner';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { isAuthenticated, isAdmin, username, logout } = useAuth();
-  const cartItemsCount = useStore((state) => state.getCartItemsCount(username || ''));
+  const cartUser = username || 'guest';
+  const cartItemsCount = useStore((state) => state.getCartItemsCount(cartUser));
 
   const isActive = (path: string) => location.pathname === path;
 

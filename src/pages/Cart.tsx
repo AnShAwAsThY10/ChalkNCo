@@ -5,28 +5,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Separator } from '../components/ui/separator';
 import { useStore } from '../lib/store';
 import { useAuth } from '../lib/auth';
+import { useCurrency } from '../lib/currency';
 import Layout from '../components/Layout';
 import { toast } from 'sonner';
+
+
 
 export default function Cart() {
   const { username } = useAuth();
   const { getCart, updateQuantity, removeFromCart, getCartTotal, clearCart } = useStore();
-  const cart = getCart(username || '');
+  const { formatPrice, getExchangeRate } = useCurrency();
+
+  const cartUser = username || 'guest';
+  const cart = getCart(cartUser);
+  const subtotalINR = getCartTotal(cartUser);
+  const exchangeRate = getExchangeRate();
+  const subtotalConverted = subtotalINR * exchangeRate;
+
 
   const handleUpdateQuantity = (productId: string, newQuantity: number) => {
-    updateQuantity(productId, newQuantity, username || '');
+    updateQuantity(productId, newQuantity, cartUser);
     if (newQuantity === 0) {
       toast.success('Item removed from cart');
     }
   };
 
   const handleRemoveItem = (productId: string, productName: string) => {
-    removeFromCart(productId, username || '');
+    removeFromCart(productId, cartUser);
     toast.success(`${productName} removed from cart`);
   };
 
   const handleClearCart = () => {
-    clearCart(username || '');
+    clearCart(cartUser);
     toast.success('Cart cleared');
   };
 
@@ -125,10 +135,10 @@ export default function Cart() {
                         
                         <div className="text-right">
                           <div className="font-bold text-pink-800">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            {formatPrice(item.price * item.quantity)}
                           </div>
                           <div className="text-sm text-pink-600/70">
-                            ${item.price} each
+                            {formatPrice(item.price)} each
                           </div>
                         </div>
                       </div>
@@ -140,53 +150,77 @@ export default function Cart() {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24 bg-white/40 backdrop-blur-sm border-pink-200/50">
-              <CardHeader>
-                <CardTitle className="text-pink-800">Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-pink-700">
-                    <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
-                    <span>${getCartTotal(username || '').toFixed(2)}</span>
+            <div className="lg:col-span-1">
+              <Card className="sticky top-24 bg-white/40 backdrop-blur-sm border-pink-200/50">
+                <CardHeader>
+                  <CardTitle className="text-pink-800">Order Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-pink-700">
+                      <span>Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
+                      <span>{formatPrice(subtotalINR)}</span>
+                    </div>
+
+                    {/* 🚀 Dynamic Shipping */}
+                    <div className="flex justify-between text-pink-700">
+                      <span>
+                        Shipping
+                        <span className="text-pink-400 text-xs block">
+                          *Free delivery for orders over {formatPrice(400)}*
+                        </span>
+                      </span>
+                      <span
+                        className={
+                          subtotalConverted > 400 * exchangeRate
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }
+                      >
+                        {subtotalConverted > 400 * exchangeRate
+                          ? 'Free'
+                          : formatPrice(50)}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-pink-700">
+                      <span>Tax</span>
+                      <span>₹0.00</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-pink-700">
-                    <span>Shipping</span>
-                    <span className="text-green-600 font-medium">Free</span>
+
+                  <Separator className="bg-pink-200/50" />
+
+                  {/* 🚀 Total */}
+                  <div className="flex justify-between text-lg font-bold text-pink-800">
+                    <span>Total</span>
+                    <span>
+                      {subtotalConverted > 400 * exchangeRate
+                        ? formatPrice(subtotalINR)
+                        : formatPrice(subtotalINR + 50)}
+                    </span>
                   </div>
-                  <div className="flex justify-between text-pink-700">
-                    <span>Tax</span>
-                    <span>₹0.00</span>
-                  </div>
-                </div>
-                
-                <Separator className="bg-pink-200/50" />
-                
-                <div className="flex justify-between text-lg font-bold text-pink-800">
-                  <span>Total</span>
-                  <span>${getCartTotal(username || '').toFixed(2)}</span>
-                </div>
-                
-                <Button 
-                  asChild 
-                  className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <Link to="/checkout">
-                    Proceed to Checkout <ArrowRight className="ml-2 w-4 h-4" />
-                  </Link>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  asChild 
-                  className="w-full !bg-transparent !hover:bg-transparent border-pink-300 text-pink-700"
-                >
-                  <Link to="/products">Continue Shopping</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+
+                  <Button
+                    asChild
+                    className="w-full bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <Link to="/checkout">
+                      Proceed to Checkout <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    asChild
+                    className="w-full !bg-transparent !hover:bg-transparent border-pink-300 text-pink-700"
+                  >
+                    <Link to="/products">Continue Shopping</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
         </div>
       </div>
     </Layout>
