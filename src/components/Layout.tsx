@@ -7,6 +7,9 @@ import { useAuth } from '../lib/auth';
 import SearchBar from './SearchBar';
 import { toast } from 'sonner';
 
+
+var img = '../images/PHOTO-2025-10-27-17-38-42.jpg';
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { isAuthenticated, isAdmin, username, logout } = useAuth();
@@ -28,9 +31,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-amber-400 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">C&C</span>
-              </div>
+
+                <img
+                  src={require('../images/PHOTO-2025-10-27-17-38-42.png')}
+                  alt="C&C"
+                  className="w-12 h-12 rounded-full shadow-md object-cover border-2 border-pink-300 scale-130"                />
+              
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-amber-600 bg-clip-text text-transparent">
                   Chalk&Canva
